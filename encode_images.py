@@ -18,6 +18,20 @@ def split_to_batches(l, n):
         yield l[i:i + n]
 
 
+def make_checkpoint(counter, generator, names, generated_images_dir, dlatent_dir):
+    # max iterations is, like, 500,000, so six digits should be enough. 
+    # Just to be safe, 8.
+    counterstring = format(counter, '08d')
+    generated_images = generator.generate_images()
+    generated_dlatents = generator.get_dlatents()
+    for img_array, dlatent, img_name in zip(generated_images, generated_dlatents, names):
+        img = PIL.Image.fromarray(img_array, 'RGB')
+        img.save(os.path.join(generated_images_dir, f'{counterstring}_iterations_{img_name}.png'), 'PNG')
+        np.save(os.path.join(dlatent_dir, f'{counterstring}_iterations_{img_name}.npy'), dlatent)
+    return True     
+         
+    
+
 def main():
     parser = argparse.ArgumentParser(description='Find latent representation of reference images using perceptual loss')
     parser.add_argument('src_dir', help='Directory with images for encoding')
@@ -55,6 +69,7 @@ def main():
     perceptual_model.build_perceptual_model(generator.generated_image)
 
     # Optimize (only) dlatents by minimizing perceptual loss between reference and generated images in feature space
+    counter = 0
     for images_batch in tqdm(split_to_batches(ref_images, args.batch_size), total=len(ref_images)//args.batch_size):
         names = [os.path.splitext(os.path.basename(x))[0] for x in images_batch]
 
@@ -62,16 +77,27 @@ def main():
         op = perceptual_model.optimize(generator.dlatent_variable, iterations=args.iterations, learning_rate=args.lr)
         pbar = tqdm(op, leave=False, total=args.iterations)
         for loss in pbar:
-            pbar.set_description(' '.join(names)+' Loss: %.2f' % loss)
+            counter = counter+1
+            checkpointed = False
+            if counter % 100 == 0 or counter < 100:                   
+                checkpointed = make_checkpoint(counter, generator, names, args.generated_images_dir, args.dlatent_dir)
+                print("****************************")
+                print(f"*counter: {counter}        *")
+                print("****************************")
+            pbar.set_description(' '.join(names) + f" counter: {counter}, checkpointed: {checkpointed}" +' Last Loss: %.2f' % loss) # This is the output
+            
+                
+            
         print(' '.join(names), ' loss:', loss)
+        
 
         # Generate images from found dlatents and save them
         generated_images = generator.generate_images()
         generated_dlatents = generator.get_dlatents()
         for img_array, dlatent, img_name in zip(generated_images, generated_dlatents, names):
             img = PIL.Image.fromarray(img_array, 'RGB')
-            img.save(os.path.join(args.generated_images_dir, f'{img_name}.png'), 'PNG')
-            np.save(os.path.join(args.dlatent_dir, f'{img_name}.npy'), dlatent)
+            img.save(os.path.join(args.generated_images_dir, f'{args.iterations}_iters_{img_name}.png'), 'PNG')
+            np.save(os.path.join(args.dlatent_dir, f'{args.iterations}_{img_name}.npy'), dlatent)
 
         generator.reset_dlatents()
 
