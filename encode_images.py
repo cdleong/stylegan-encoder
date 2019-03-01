@@ -65,6 +65,12 @@ def main():
         generator_network, discriminator_network, Gs_network = pickle.load(f)
 
     generator = Generator(Gs_network, args.batch_size, randomize_noise=args.randomize_noise)
+    
+    #TODO: load dlatents here to pick up training if interrupted.
+    
+#    latent = np.load('filename.npy')
+#     generator.set_dlatents()
+    
     perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.batch_size)
     perceptual_model.build_perceptual_model(generator.generated_image)
 
