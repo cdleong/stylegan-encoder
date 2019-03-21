@@ -18,16 +18,24 @@ def split_to_batches(l, n):
         yield l[i:i + n]
 
 
-def make_checkpoint(counter, generator, names, generated_images_dir, dlatent_dir):
+def make_checkpoint(counter, generator, names, generated_images_dir, dlatent_dir, loss=None):
     # max iterations is, like, 500,000, so six digits should be enough. 
     # Just to be safe, 8.
     counterstring = format(counter, '08d')
     generated_images = generator.generate_images()
     generated_dlatents = generator.get_dlatents()
+    
+    loss_string=""
+    if loss:
+        loss_string = f"best_loss_thus_far_{loss}"
+        
+    
+    img_name = os.path.join(generated_images_dir, f'{loss_string}{counterstring}_iterations_{img_name}.png')
+    npy_name = os.path.join(dlatent_dir, f'{loss_string}{counterstring}_iterations_{img_name}.npy')
     for img_array, dlatent, img_name in zip(generated_images, generated_dlatents, names):
         img = PIL.Image.fromarray(img_array, 'RGB')
-        img.save(os.path.join(generated_images_dir, f'{counterstring}_iterations_{img_name}.png'), 'PNG')
-        np.save(os.path.join(dlatent_dir, f'{counterstring}_iterations_{img_name}.npy'), dlatent)
+        img.save(img_name, 'PNG')
+        np.save(npy_name, dlatent)
     return True     
          
     
@@ -66,16 +74,37 @@ def main():
 
     generator = Generator(Gs_network, args.batch_size, randomize_noise=args.randomize_noise)
     
-    #TODO: load dlatents here to pick up training if interrupted.
-    
-#    latent = np.load('filename.npy')
-#     generator.set_dlatents()
+
     
     perceptual_model = PerceptualModel(args.image_size, layer=9, batch_size=args.batch_size)
     perceptual_model.build_perceptual_model(generator.generated_image)
 
     # Optimize (only) dlatents by minimizing perceptual loss between reference and generated images in feature space
     counter = 0
+    
+    
+    # Colin: load dlatents here to pick up training if interrupted.
+    # I'm just assuming there's a "resume training" folder, 
+    # and that the user can add a numpy file containing their last numpy file they saved off, 
+    # and a text file with a number in it.
+#     try:        
+#         latent = np.load('resume_training/resume_training.npy')
+#         print(type(latent))
+#         print(latent.shape)
+#         
+#         print(f"generator: {generator}")
+#         print(f"generator.dlatent_variable: {dlatent_variable}")
+#         print(f"generator.dlatent_variable: {dlatent_variable}")
+#         print(generator.dlatent_variable)
+#         generator.set_dlatents(latent)
+#         
+#         with open('resume_training/iterations.txt') as f:
+#             first_line = f.readline()
+#             counter = int(first_line)        
+#         print(f"Resuming encoding at iteration {counter}")
+#     except FileNotFoundError:
+#         print("resume_training.npy not found")
+    lowest_loss_thus_far=1000 # set it to a high number. 
     for images_batch in tqdm(split_to_batches(ref_images, args.batch_size), total=len(ref_images)//args.batch_size):
         names = [os.path.splitext(os.path.basename(x))[0] for x in images_batch]
 
@@ -89,7 +118,13 @@ def main():
                 checkpointed = make_checkpoint(counter, generator, names, args.generated_images_dir, args.dlatent_dir)
                 print("****************************")
                 print(f"*counter: {counter}        *")
-                print("****************************")
+
+                
+            if loss < lowest_loss_thus_far:
+                lowest_loss_thus_far = loss
+                
+                
+            print("****************************")
             pbar.set_description(' '.join(names) + f" counter: {counter}, checkpointed: {checkpointed}" +' Last Loss: %.2f' % loss) # This is the output
             
                 
