@@ -41,10 +41,13 @@ class PerceptualModel:
                                                 dtype='float32', initializer=tf.initializers.zeros())
         self.features_weight = tf.get_variable('features_weight', shape=generated_img_features.shape,
                                                dtype='float32', initializer=tf.initializers.zeros())
-        self.sess.run([self.features_weight.initializer, self.features_weight.initializer])
-
+        
         self.loss = tf.losses.mean_squared_error(self.features_weight * self.ref_img_features,
                                                  self.features_weight * generated_img_features) / 82890.0
+                                                 
+        # trying to get Adam working
+        
+
 
     def set_reference_images(self, images_list):
         assert(len(images_list) != 0 and len(images_list) <= self.batch_size)
@@ -71,8 +74,30 @@ class PerceptualModel:
     def optimize(self, vars_to_optimize, iterations=500, learning_rate=1.):
         vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-        min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])
+        
+        # Colin: Let's give Adam a try?
+        # Apparently AdamOptimizer has extra magic. https://stackoverflow.com/questions/47765595/tensorflow-attempting-to-use-uninitialized-value-beta1-power?rq=1
+        # https://github.com/tensorflow/tensorflow/issues/8057
+        # https://stackoverflow.com/questions/34001922/failedpreconditionerror-attempting-to-use-uninitialized-in-tensorflow
+        # can't seem to get it working.
+        # https://github.com/openai/universe-starter-agent/issues/31
+        # https://stackoverflow.com/questions/41533489/how-to-initialise-only-optimizer-variables-in-tensorflow/45624533
+        # https://stackoverflow.com/questions/33788989/tensorflow-using-adam-optimizer
+        # https://pythonprogramming.net/tensorflow-neural-network-session-machine-learning-tutorial/
+        
+        # Finally got it working by adding self.sess.run(tf.global_variables_initializer())
+        # AFTER the definition of the minimize function.
+#         optimizer = tf.train.AdamOptimizer()  # Adam makes some special variables        
+        min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with Adam, makes more
+        
+        # initialize optimizer variables so it dont' crash.
+#         self.sess.run(tf.global_variables_initializer())  # initialize step so Adam will work.
+        self.sess.run(tf.variables_initializer(optimizer.variables()))  # initialize only the optimizer vars. 
+        
+        print(f"About to minimize using optimizer {optimizer}")        
+        
         for _ in range(iterations):
+            
             _, loss = self.sess.run([min_op, self.loss])
             yield loss
 
