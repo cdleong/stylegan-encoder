@@ -91,8 +91,13 @@ class PerceptualModel:
         
         # Finally got it working by adding self.sess.run(tf.global_variables_initializer())
         # AFTER the definition of the minimize function.
-        optimizer = tf.train.AdamOptimizer()  # Adam makes some special variables        
+#         optimizer = tf.train.AdamOptimizer()  # Adam makes some special variables        
+        
+        
+        optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate)  # Adam makes some special variables
         min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with Adam, makes more
+        
+        
         
         # initialize optimizer variables so it dont' crash.
 #         self.sess.run(tf.global_variables_initializer())  # initialize step so Adam will work.
