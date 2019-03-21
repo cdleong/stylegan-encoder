@@ -27,16 +27,15 @@ def make_checkpoint(counter, generator, names, generated_images_dir, dlatent_dir
     
     loss_string=""
     if loss:
-        loss_string = f"best_loss_thus_far_{loss}"
+        loss_string = f"best_loss_thus_far_{loss}_"
         
-    
-    img_name = os.path.join(generated_images_dir, f'{loss_string}{counterstring}_iterations_{img_name}.png')
-    npy_name = os.path.join(dlatent_dir, f'{loss_string}{counterstring}_iterations_{img_name}.npy')
     for img_array, dlatent, img_name in zip(generated_images, generated_dlatents, names):
+        img_fname = os.path.join(generated_images_dir, f'{loss_string}{counterstring}_iterations_{img_name}.png')
+        npy_fname = os.path.join(dlatent_dir, f'{loss_string}{counterstring}_iterations_{img_name}.npy')
         img = PIL.Image.fromarray(img_array, 'RGB')
-        img.save(img_name, 'PNG')
-        np.save(npy_name, dlatent)
-    return True     
+        img.save(img_fname, 'PNG')
+        np.save(npy_fname, dlatent)
+    return True 
          
     
 
@@ -122,9 +121,10 @@ def main():
                 
             if loss < lowest_loss_thus_far:
                 lowest_loss_thus_far = loss
+                print(f"*best loss so far: {lowest_loss_thus_far}        *")
+                make_checkpoint(counter, generator, names, args.generated_images_dir, args.dlatent_dir, loss=loss)
                 
                 
-            print("****************************")
             pbar.set_description(' '.join(names) + f" counter: {counter}, checkpointed: {checkpointed}" +' Last Loss: %.2f' % loss) # This is the output
             
                 
