@@ -41,4 +41,11 @@ if __name__ == "__main__":
     sns.lineplot(x="iteration",y="loss",data=encoder_data)
     
     plt.savefig("loss_curve.png")
+    
+    
+    plt.figure()    
+    
+    sns.lineplot(x="iteration",y="loss",data=encoder_data.tail(1000))
+    
+    plt.savefig("loss_curve_last_1k.png")
         
