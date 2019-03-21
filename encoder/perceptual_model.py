@@ -72,8 +72,12 @@ class PerceptualModel:
         self.sess.run(tf.assign(self.ref_img_features, image_features))
 
     def optimize(self, vars_to_optimize, iterations=500, learning_rate=1.):
+        # Colin: more optimizer choices exist besides GradientDescent. 
+        # http://cs231n.github.io/neural-networks-3/
+        # http://ruder.io/optimizing-gradient-descent/index.html#whichoptimizertochoose
+        
         vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+#         optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
         
         # Colin: Let's give Adam a try?
         # Apparently AdamOptimizer has extra magic. https://stackoverflow.com/questions/47765595/tensorflow-attempting-to-use-uninitialized-value-beta1-power?rq=1
@@ -87,7 +91,7 @@ class PerceptualModel:
         
         # Finally got it working by adding self.sess.run(tf.global_variables_initializer())
         # AFTER the definition of the minimize function.
-#         optimizer = tf.train.AdamOptimizer()  # Adam makes some special variables        
+        optimizer = tf.train.AdamOptimizer()  # Adam makes some special variables        
         min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with Adam, makes more
         
         # initialize optimizer variables so it dont' crash.
