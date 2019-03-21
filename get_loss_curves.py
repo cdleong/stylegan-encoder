@@ -33,6 +33,11 @@ if __name__ == "__main__":
     print(encoder_data.head(10))
     print(encoder_data.count())
     
+    encoder_data.drop_duplicates(inplace=True)
+    print("Dropping duplicates")
+    print(encoder_data.head(10))
+    print(encoder_data.count())
+    
 #     encoder_data = encoder_data.head(100)
 #     print(encoder_data.count())
     
