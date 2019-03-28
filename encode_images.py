@@ -30,8 +30,8 @@ def make_checkpoint(counter, generator, names, generated_images_dir, dlatent_dir
         loss_string = f"best_loss_thus_far_{loss}_"
         
     for img_array, dlatent, img_name in zip(generated_images, generated_dlatents, names):
-        img_fname = os.path.join(generated_images_dir, f'{loss_string}{counterstring}_iterations_{img_name}.png')
-        npy_fname = os.path.join(dlatent_dir, f'{loss_string}{counterstring}_iterations_{img_name}.npy')
+        img_fname = os.path.join(generated_images_dir, f'{counterstring}_iterations_{loss_string}{img_name}.png')
+        npy_fname = os.path.join(dlatent_dir, f'{counterstring}_iterations_{loss_string}{img_name}.npy')
         img = PIL.Image.fromarray(img_array, 'RGB')
         img.save(img_fname, 'PNG')
         np.save(npy_fname, dlatent)
