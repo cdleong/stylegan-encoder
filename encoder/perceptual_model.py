@@ -92,15 +92,16 @@ class PerceptualModel:
         # Finally got it working by adding self.sess.run(tf.global_variables_initializer())
         # AFTER the definition of the minimize function.
 #         optimizer = tf.train.AdamOptimizer()  # Adam makes some special variables        
-        
-        
         optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate)  # Adam makes some special variables
-        min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with Adam, makes more
+                
+        # according to CS231n (http://cs231n.github.io/neural-networks-3/), "SGD+Nesterov Momentum" one is good: 
+        # https://www.tensorflow.org/api_docs/python/tf/train/MomentumOptimizer
+        optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, use_nesterov=True)
         
         
-        
+        min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with Adam, makes more vars that 
+                                                                             # also need initializing...
         # initialize optimizer variables so it dont' crash.
-#         self.sess.run(tf.global_variables_initializer())  # initialize step so Adam will work.
         self.sess.run(tf.variables_initializer(optimizer.variables()))  # initialize only the optimizer vars. 
         
         print(f"About to minimize using optimizer {optimizer}")        
