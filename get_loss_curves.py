@@ -1,4 +1,5 @@
 import argparse
+import os
 import re
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -40,17 +41,20 @@ if __name__ == "__main__":
     
 #     encoder_data = encoder_data.head(100)
 #     print(encoder_data.count())
+
+    save_folder = os.path.dirname(args.file_to_parse)
+    print(f"saving images to {save_folder}")
     
     plt.figure()    
     
     sns.lineplot(x="iteration",y="loss",data=encoder_data)
     
-    plt.savefig("loss_curve.png")
+    plt.savefig(os.path.join(save_folder, "loss_curve.png"))
     
     
     plt.figure()    
     
     sns.lineplot(x="iteration",y="loss",data=encoder_data.tail(1000))
     
-    plt.savefig("loss_curve_last_1k.png")
+    plt.savefig(os.path.join(save_folder,"loss_curve_last_1k.png"))
         
