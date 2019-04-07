@@ -77,7 +77,12 @@ class PerceptualModel:
         # http://ruder.io/optimizing-gradient-descent/index.html#whichoptimizertochoose
         
         vars_to_optimize = vars_to_optimize if isinstance(vars_to_optimize, list) else [vars_to_optimize]
-#         optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+        
+        
+        
+        
+        # Default optimizer is just straight Gradient Descent
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
         
         # Colin: Let's give Adam a try?
         # Apparently AdamOptimizer has extra magic. https://stackoverflow.com/questions/47765595/tensorflow-attempting-to-use-uninitialized-value-beta1-power?rq=1
@@ -87,22 +92,41 @@ class PerceptualModel:
         # https://github.com/openai/universe-starter-agent/issues/31
         # https://stackoverflow.com/questions/41533489/how-to-initialise-only-optimizer-variables-in-tensorflow/45624533
         # https://stackoverflow.com/questions/33788989/tensorflow-using-adam-optimizer
-        # https://pythonprogramming.net/tensorflow-neural-network-session-machine-learning-tutorial/
-        
+        # https://pythonprogramming.net/tensorflow-neural-network-session-machine-learning-tutorial/        
         # Finally got it working by adding self.sess.run(tf.global_variables_initializer())
         # AFTER the definition of the minimize function.
-#         optimizer = tf.train.AdamOptimizer()  # Adam makes some special variables        
-        #optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate)  # Adam makes some special variables
+        
+        
+        # Adam works OK. 
+        # It keeps improving for longer, but converges slower. 
+        # it got MG_4139 to 0.24 loss after 10k iterations
+#         optimizer=tf.train.AdamOptimizer(learning_rate=learning_rate)
+        
+        # AdaGRAD seems to work pretty well!
+        # It gets MG_4139 to .09 in 10k iterations
+#         optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate)  
                 
         # according to CS231n (http://cs231n.github.io/neural-networks-3/), "SGD+Nesterov Momentum" one is good: 
         # https://www.tensorflow.org/api_docs/python/tf/train/MomentumOptimizer
         # I saw momentum=0.9 in an example once
-        optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=True)
+        # Momentum Optimizer got MG_4139 to .14 in 10k iterations
+#         optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=True)
         
         
-        min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with Adam, makes more vars that 
+        # According to http://ruder.io/optimizing-gradient-descent/index.html,
+        # " RMSprop, Adadelta, and Adam are very similar algorithms that do well in similar circumstances."
+        # So it should perform similar to Adam
+        
+        
+        min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with fancy optimizers, 
+                                                                             # makes more vars that 
                                                                              # also need initializing...
-        # initialize optimizer variables so it dont' crash.
+        
+        
+        # IF YOU USE A FANCY OPTIMIZIER YOU NEED TO PUT THIS HERE
+        # It has to go _after_ you both define the optimizer, 
+        # and define the minimize operation
+        # initialize optimizer variables so it don't crash.
         self.sess.run(tf.variables_initializer(optimizer.variables()))  # initialize only the optimizer vars. 
         
         print(f"About to minimize using optimizer {optimizer}")        
