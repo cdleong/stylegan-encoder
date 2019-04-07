@@ -116,7 +116,10 @@ class PerceptualModel:
         # According to http://ruder.io/optimizing-gradient-descent/index.html,
         # " RMSprop, Adadelta, and Adam are very similar algorithms that do well in similar circumstances."
         # So it should perform similar to Adam
+        # https://www.tensorflow.org/api_docs/python/tf/train/RMSPropOptimizer
         
+        # Also, in that same article, AdaDelta seemed to find the minimum fastest.
+        # https://www.tensorflow.org/api_docs/python/tf/train/AdadeltaOptimizer
         
         min_op = optimizer.minimize(self.loss, var_list=[vars_to_optimize])  # This part, with fancy optimizers, 
                                                                              # makes more vars that 
