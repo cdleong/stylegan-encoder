@@ -45,16 +45,33 @@ if __name__ == "__main__":
     save_folder = os.path.dirname(args.file_to_parse)
     print(f"saving images to {save_folder}")
     
+    # whole curve
     plt.figure()    
     
     sns.lineplot(x="iteration",y="loss",data=encoder_data)
     
     plt.savefig(os.path.join(save_folder, "loss_curve.png"))
     
-    
+    # last 1k
     plt.figure()    
     
     sns.lineplot(x="iteration",y="loss",data=encoder_data.tail(1000))
     
     plt.savefig(os.path.join(save_folder,"loss_curve_last_1k.png"))
-        
+    
+    
+    # first 1k
+    plt.figure()    
+    
+    sns.lineplot(x="iteration",y="loss",data=encoder_data.head(1000))
+    
+    plt.savefig(os.path.join(save_folder,"loss_curve_first_1k.png"))
+    
+    
+    # last 100, mainly because Adam spikes so much
+    plt.figure()    
+    
+    sns.lineplot(x="iteration",y="loss",data=encoder_data.tail(100))
+    
+    plt.savefig(os.path.join(save_folder,"loss_curve_last_100.png"))
+    
